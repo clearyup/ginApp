@@ -1,33 +1,47 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
-func CheckCors() gin.HandlerFunc {
-	//这里可以处理一些别的逻辑
+// Cors 跨域配置
+func Cors() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 定义一个origin的map，只有在字典中的key才允许跨域请求
-		var allowOrigins = map[string]struct{}{
-			"http://127.0.0.1:8888":       {},
-			"https://www.yangyanxing.com": {},
+		method := c.Request.Method               // 请求方法
+		origin := c.Request.Header.Get("Origin") // 请求头部
+		var headerKeys []string                  // 声明请求头keys
+		for k := range c.Request.Header {
+			headerKeys = append(headerKeys, k)
 		}
-		origin := c.Request.Header.Get("Origin") //请求头部
-		method := c.Request.Method
-		if method == "OPTIONS" {
-			c.AbortWithStatus(http.StatusNoContent)
+		headerStr := strings.Join(headerKeys, ", ")
+		if headerStr != "" {
+			headerStr = fmt.Sprintf("access-control-allow-origin, access-control-allow-headers, %s", headerStr)
+		} else {
+			headerStr = "access-control-allow-origin, access-control-allow-headers"
 		}
+
 		if origin != "" {
-			if _, ok := allowOrigins[origin]; ok {
-				c.Header("Access-Control-Allow-Origin", origin)
-				c.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, UPDATE")
-				c.Header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization")
-				c.Header("Access-Control-Expose-Headers", "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Cache-Control, Content-Language, Content-Type")
-				c.Header("Access-Control-Allow-Credentials", "true")
-			}
+			c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+			c.Header("Access-Control-Allow-Origin", "*")                                       // 这是允许访问所有域
+			c.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, UPDATE") // 服务器支持的所有跨域请求的方法,为了避免浏览器的多次'预检'请求
+			// 允许的header类型
+			c.Header("Access-Control-Allow-Headers", headerStr)
+			// 允许跨域设置，可以返回其他字段
+			c.Header("Access-Control-Expose-Headers", "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Cache-Control, Content-Language, Content-Type, Expires, Last-Modified, Pragma, FooBar") // 跨域关键设置 让浏览器可以解析
+			c.Header("Access-Control-Max-Age", "172800")                                                                                                                                                             // 缓存请求信息 单位为秒
+			c.Header("Access-Control-Allow-Credentials", "false")                                                                                                                                                    //  跨域请求是否需要带cookie信息 默认设置为true
+			c.Set("content-type", "application/json")                                                                                                                                                                // 设置返回格式是json
 		}
-		c.Next()
+		// 放行所有OPTIONS方法
+		if method == "OPTIONS" {
+			c.JSON(http.StatusOK, "Options Request!")
+			return
+		}
+		// 处理请求
+		c.Next() //  处理请求
 	}
 }

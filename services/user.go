@@ -40,7 +40,7 @@ func (u *UserServices) QueryUser(c *gin.Context) {
 
 	var req UserReq
 	if err := c.ShouldBind(&req); err != nil {
-		c.JSON(200, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"message": "query user param null !",
 			"data":    req.Name,
 		})

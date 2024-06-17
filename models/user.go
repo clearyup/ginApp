@@ -18,7 +18,7 @@ func (u *User) TableName() string {
 
 func (u *User) GetUserByName(name string) (User, error) {
 	var user User
-	err := dao.Db.Where("username = ?", name).First(&user).Error
+	err := dao.GetDb().Where("username = ?", name).First(&user).Error
 	if err != nil {
 		return User{}, err
 	}
