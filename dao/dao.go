@@ -16,7 +16,7 @@ var (
 	once   sync.Once
 )
 
-// 单例模式
+// 单例模式 mysql
 func GetDb() *gorm.DB {
 	once.Do(func() {
 		Gormv2, err = gorm.Open(mysql.Open(config.MysqlDb), &gorm.Config{})
